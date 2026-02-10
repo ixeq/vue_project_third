@@ -139,7 +139,7 @@ Vue.component('col2', {
         </div>
     `,
     props: {
-        column3: {
+        column2: {
             type: Array,
         },
         card: {
@@ -164,8 +164,7 @@ Vue.component('col3', {
     template: `
         <div class="col">
             <h2>Testing</h2>
-            <li class="cards" style="background-color: #f5f287" v-for="card in column2">
-                <div class="cards" style="background-color: #f5f287" v-for="card in column3">
+            <li class="cards" style="background-color: #f5f287" v-for="card in column3">
                     <a @click="card.editB = true">Edit</a> <br>
                 <p class="card-title">{{card.title}}</p>
                 <ul>
@@ -200,7 +199,6 @@ Vue.component('col3', {
                     </li>
                 </ul>
                 <a @click="card.transfer =true">Last Column</a>  | <a @click="nextcol(card)">Next Column</a>
-                </div>
             </li>
         </div>
     `,
@@ -235,7 +233,6 @@ Vue.component('col4', {
     template: `
         <div class="col">
             <h2>Completed tasks</h2>
-            <div class="cards" style="background-color: lightgreen" v-for="card in column2">
                 <div class="cards" style="background-color: lightgreen" v-for="card in column4">
                 <p class="card-title">{{card.title}}</p>
                 <ul>
@@ -269,14 +266,14 @@ Vue.component('col4', {
 Vue.component('newcard', {
     template: `
     <section>
-    <!-- openModal - id модального окна (элемента div) -->
+    
     <a href="#openModal" class="btn btnModal">Create card</a>
     <div id="openModal" class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Fill out the card</h3>
             <a href="#close" title="Close" class="close">×</a>
+            <h3 class="modal-title">Fill out the card</h3>
         </div>
         <div class="modal-body">    
     
