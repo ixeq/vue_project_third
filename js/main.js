@@ -1,4 +1,9 @@
-let eventBus = new Vue()
+let eventBus = new Vue({
+    data: {
+        draggedCard: null,
+        draggedFromColumn: null
+    }
+})
 
 Vue.component('cols', {
     template:`
@@ -33,28 +38,22 @@ Vue.component('cols', {
             column1: [],
             column2: [],
             column3: [],
-            column4: [],
-            draggedCard: null,
-            draggedFromColumn: null
+            column4: []
         }
     },
     methods: {
         handleDrop(data) {
             const { card, fromColumn, toColumn } = data
-
-            // Удаляем карточку из исходной колонки
-            this[fromColumn] = this[fromColumn].filter(c => c !== card)
-
-            // Добавляем в целевую колонку
+            this[fromColumn] = this[fromColumn].filter(c => c.id !== card.id)
             this[toColumn].push(card)
-
-            // Обновляем статус для колонки 4 (Completed)
             if (toColumn === 'column4') {
                 this.checkDeadline(card)
             }
         },
         checkDeadline(card) {
-            if (card.date > card.deadline) {
+            const cardDate = new Date(card.date.split('-').reverse().join('-'))
+            const deadlineDate = new Date(card.deadline)
+            if (cardDate > deadlineDate) {
                 card.current = false
             }
         }
@@ -71,30 +70,30 @@ Vue.component('cols', {
         })
         eventBus.$on('addColumn4', card => {
             this.column4.push(card)
-            if (card.date > card.deadline) {
-                card.current = false
-            }
+            this.checkDeadline(card)
         })
     }
 })
 
-// Миксин для функционала перетаскивания
+
 const draggableMixin = {
     methods: {
-        dragStart(card, columnId) {
-            eventBus.$emit('drag-start', { card, columnId })
+        dragStart(event, card, columnId) {
+            eventBus.draggedCard = card
+            eventBus.draggedFromColumn = columnId
             event.dataTransfer.effectAllowed = 'move'
             event.dataTransfer.setData('text/plain', JSON.stringify(card))
-            // Добавляем класс для визуальной обратной связи
             event.target.classList.add('dragging')
         },
         allowDrop(event) {
             event.preventDefault()
-            event.target.closest('.col').classList.add('drag-over')
+            const colElement = event.target.closest('.col')
+            if (colElement) {
+                colElement.classList.add('drag-over')
+            }
         },
         drop(event, toColumn) {
             event.preventDefault()
-            // Убираем классы визуальной обратной связи
             document.querySelectorAll('.col.drag-over').forEach(el => {
                 el.classList.remove('drag-over')
             })
@@ -105,15 +104,14 @@ const draggableMixin = {
             const data = event.dataTransfer.getData('text/plain')
             if (data) {
                 const card = JSON.parse(data)
-                eventBus.$emit('drop-card', {
+                this.$parent.handleDrop({
                     card: card,
-                    fromColumn: eventBus.$data.draggedFromColumn,
+                    fromColumn: eventBus.draggedFromColumn,
                     toColumn: toColumn
                 })
             }
         },
-        dragEnd() {
-            // Убираем классы визуальной обратной связи
+        dragEnd(event) {
             document.querySelectorAll('.col.drag-over').forEach(el => {
                 el.classList.remove('drag-over')
             })
@@ -137,9 +135,10 @@ Vue.component('col1', {
                 class="cards" 
                 style="background-color: #e79ba2" 
                 v-for="card in column1"
+                :key="card.id"
                 draggable="true"
-                @dragstart="dragStart(card, 'column1')" 
-                @dragend="dragEnd"
+                @dragstart="dragStart($event, card, 'column1')" 
+                @dragend="dragEnd($event)"
             >
                 <a @click="deleteCard(card)">Delete</a> <a @click="card.editB = true">Edit</a>
                 <p class="card-title">{{card.title}}</p>
@@ -169,15 +168,6 @@ Vue.component('col1', {
     props: {
         column1: {
             type: Array,
-        },
-        column2: {
-            type: Array,
-        },
-        card: {
-            type: Object
-        },
-        errors: {
-            type: Array
         }
     },
     methods: {
@@ -190,8 +180,6 @@ Vue.component('col1', {
         },
         updateTask(card) {
             card.editB = false
-            this.column1.push(card)
-            this.column1.splice(this.column1.indexOf(card), 1)
             card.edit = new Date().toLocaleString()
         }
     },
@@ -210,9 +198,10 @@ Vue.component('col2', {
                 class="cards" 
                 style="background-color: lightblue" 
                 v-for="card in column2"
+                :key="card.id"
                 draggable="true"
-                @dragstart="dragStart(card, 'column2')" 
-                @dragend="dragEnd""
+                @dragstart="dragStart($event, card, 'column2')" 
+                @dragend="dragEnd($event)"
             >
                 <a @click="card.editB = true">Edit</a> <br>
                 <p class="card-title">{{card.title}}</p>
@@ -243,9 +232,6 @@ Vue.component('col2', {
     props: {
         column2: {
             type: Array,
-        },
-        card: {
-            type: Object
         }
     },
     methods: {
@@ -256,8 +242,6 @@ Vue.component('col2', {
         updateTask(card){
             card.edit = new Date().toLocaleString()
             card.editB = false
-            this.column2.push(card)
-            this.column2.splice(this.column2.indexOf(card), 1)
         }
     }
 })
@@ -275,9 +259,10 @@ Vue.component('col3', {
                 class="cards" 
                 style="background-color: #f5f287" 
                 v-for="card in column3"
+                :key="card.id"
                 draggable="true"
-                @dragstart="dragStart(card, 'column3')" 
-                @dragend="dragEnd"
+                @dragstart="dragStart($event, card, 'column3')" 
+                @dragend="dragEnd($event)"
             >
                 <a @click="card.editB = true">Edit</a> <br>
                 <p class="card-title">{{card.title}}</p>
@@ -318,9 +303,6 @@ Vue.component('col3', {
     props: {
         column3: {
             type: Array,
-        },
-        card: {
-            type: Object
         }
     },
     methods: {
@@ -336,8 +318,6 @@ Vue.component('col3', {
         updateTask(card){
             card.edit = new Date().toLocaleString()
             card.editB = false
-            this.column3.push(card)
-            this.column3.splice(this.column3.indexOf(card), 1)
         }
     }
 })
@@ -355,9 +335,10 @@ Vue.component('col4', {
                 class="cards" 
                 style="background-color: lightgreen" 
                 v-for="card in column4"
+                :key="card.id"
                 draggable="true"
-                @dragstart="dragStart(card, 'column4')" 
-                @dragend="dragEnd"
+                @dragstart="dragStart($event, card, 'column4')" 
+                @dragend="dragEnd($event)"
             >
                 <p class="card-title">{{card.title}}</p>
                 <ul>
@@ -373,9 +354,6 @@ Vue.component('col4', {
     props: {
         column4: {
             type: Array,
-        },
-        card: {
-            type: Object
         }
     },
 
@@ -421,6 +399,7 @@ Vue.component('newcard', {
     methods: {
         onSubmit() {
             let card = {
+                id: Date.now(),
                 title: this.title,
                 description: this.description,
                 date: new Date().toLocaleDateString().split("-").reverse().join("-"),
@@ -441,25 +420,9 @@ Vue.component('newcard', {
     }
 })
 
-// Глобальная обработка событий перетаскивания
-eventBus.$on('drag-start', (data) => {
-    eventBus.$data.draggedCard = data.card
-    eventBus.$data.draggedFromColumn = data.columnId
-})
-
-eventBus.$on('drop-card', (data) => {
-    const parent = eventBus.$root.$children[0].$refs.cols
-    if (parent) {
-        parent.handleDrop(data)
-    }
-})
-
 let app = new Vue({
     el: '#app',
     data: {
         name: 'Kanban'
-    },
-    methods: {
-
     }
 })
