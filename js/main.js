@@ -51,7 +51,7 @@ Vue.component('col1', {
             <h2>Planned tasks</h2>
             <li class="cards" style="background-color: #e79ba2" v-for="card in column1">
             <a @click="deleteCard(card)">Delete</a> <a @click="card.editB = true">Edit</a>
-            <p>{{card.title}}</p>
+            <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
                     <li class="tasks">Date of creation: {{card.date}}</li>
@@ -112,7 +112,7 @@ Vue.component('col2', {
             <h2>Tasks in progress</h2>
             <li class="cards" style="background-color: lightblue" v-for="card in column2">
                 <a @click="card.editB = true">Edit</a> <br>
-                <p>{{card.title}}</p>
+                <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
                     <li class="tasks">Date of creation:
@@ -167,7 +167,7 @@ Vue.component('col3', {
             <li class="cards" style="background-color: #f5f287" v-for="card in column2">
                 <div class="cards" style="background-color: #f5f287" v-for="card in column3">
                     <a @click="card.editB = true">Edit</a> <br>
-                <p>{{card.title}}</p>
+                <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
                     <li class="tasks">Date of creation:
@@ -237,7 +237,7 @@ Vue.component('col4', {
             <h2>Completed tasks</h2>
             <div class="cards" style="background-color: lightgreen" v-for="card in column2">
                 <div class="cards" style="background-color: lightgreen" v-for="card in column4">
-                <p>{{card.title}}</p>
+                <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
                     <li class="tasks">Date of creation:
@@ -268,23 +268,35 @@ Vue.component('col4', {
 
 Vue.component('newcard', {
     template: `
-    <div class="addform">
-        <form @submit.prevent="onSubmit">
+    <section>
+    <!-- openModal - id модального окна (элемента div) -->
+    <a href="#openModal" class="btn btnModal">Create card</a>
+    <div id="openModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Fill out the card</h3>
+            <a href="#close" title="Close" class="close">×</a>
+        </div>
+        <div class="modal-body">    
+    
+        <form class="addform" @submit.prevent="onSubmit">
             <p>
                 <label for="intitle">Title</label>
                 <input id="intitle" required v-model="title" maxlength="30" type="text" placeholder="title">
             </p>
-            <div>
-                <label for="indescription">Description</label>
-                <textarea required id="indescription" rows="5" columns="10" v-model="description" maxlength="60"> </textarea>
-            </div>
-            <div>
-                <label for="indeadline">Deadline</label>
-                <input required type="date" required placeholder="дд.мм.гггг" id="indeadline" v-model="deadline">
-            </div>
-            <button type="submit">Add a task</button>
+            <label for="indescription">Description</label>
+            <textarea required id="indescription" rows="5" columns="10" v-model="description" maxlength="60"> </textarea>
+            <label for="indeadline">Deadline</label>
+            <input required type="date" required placeholder="дд.мм.гггг" id="indeadline" v-model="deadline">
+            <button type="submit">Add a card</button>
         </form>
+        
+        </div>
+        </div>
     </div>
+    </div>
+    </section>
     `,
     data() {
         return {
