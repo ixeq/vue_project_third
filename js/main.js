@@ -235,11 +235,11 @@ Vue.component('newcard', {
             </p>
             <div>
                 <label for="indescription">Description</label>
-                <textarea required id="indescription" v-model="description" maxlength="60"> </textarea>
+                <textarea required id="indescription" rows="5" columns="10" v-model="description" maxlength="60"> </textarea>
             </div>
             <div>
                 <label for="indeadline">Deadline</label>
-                <input required type="text" required placeholder="дд.мм.гггг" id="indeadline" v-model="deadline">
+                <input required type="date" required placeholder="дд.мм.гггг" id="indeadline" v-model="deadline">
             </div>
             <button type="submit">Add a task</button>
         </form>
