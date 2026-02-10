@@ -35,6 +35,9 @@ Vue.component('cols', {
         })
         eventBus.$on('addColumn4', card => {
             this.column4.push(card)
+            card.comdate = new Date().toLocaleDateString()
+            console.log(card.comdate)
+            console.log(card.deadline)
         })
     },
     computed: {
@@ -53,6 +56,7 @@ Vue.component('col1', {
                     <li class="tasks">Description: {{card.description}}</li>
                     <li class="tasks">Date of creation: {{card.date}}</li>
                     <li class="tasks">Deadline: {{card.deadline}}</li>
+                    <li class="tasks" v-if="card.edit != null">Last change: {{ card.edit}}</li>
                 </ul>
                 <a @click="nextcol(card)">Next Column</a>
             </div>
@@ -101,7 +105,8 @@ Vue.component('col2', {
                     <li class="tasks">Date of creation:
                     {{ card.date }}</li>
                     <li class="tasks">Deadline: {{card.deadline}}</li>
-                    <li class="tasks">{{ card.reason }}</li>
+                    <li class="tasks" v-if="card.reason != null">Reason of transfer: {{ card.reason }}</li>
+                    <li class="tasks" v-if="card.edit != null">Last change: {{ card.edit}}</li>
                 </ul>
                 <a @click="nextcol(card)">Next Column</a>
             </div>
@@ -135,7 +140,17 @@ Vue.component('col3', {
             <h2>Testing</h2>
             <div class="cards" style="background-color: #f5f287" v-for="card in column2">
                 <div class="cards" style="background-color: #f5f287" v-for="card in column3">
-                    <card :card="card"></card>   
+                    <a @click="editCard(card)">Edit</a> <br>
+                <p>{{card.title}}</p>
+                <ul>
+                    <li class="tasks">Description: {{card.description}}</li>
+                    <li class="tasks">Date of creation:
+                    {{ card.date }}</li>
+                    <li class="tasks">Deadline: {{card.deadline}}</li>
+                    <li class="tasks" v-if="card.reason != null">Reason of transfer: {{ card.reason }}</li>
+                    <li class="tasks" v-if="card.edit != null">Last change: {{ card.edit}}</li>
+                </ul>
+                <a @click="lastcol(card)">Last Column</a>  | <a @click="nextcol(card)">Next Column</a>
                 </div>
             </div>
         </div>
@@ -179,6 +194,8 @@ Vue.component('col4', {
                     <li class="tasks">Date of creation:
                     {{ card.date }}</li>
                     <li class="tasks">Deadline: {{card.deadline}}</li>
+                    <li class="tasks" v-if="card.deadline >= card.comdate">Сompleted on time</li>
+                    <li class="tasks" v-if="card.deadline < card.comdate">Not completed on time</li>
                 </ul>
                 </div>
         </div>
@@ -193,7 +210,18 @@ Vue.component('col4', {
     },
     methods: {
 
-    }
+    },
+    computed:  {
+        completedCard() {
+            let completed = null
+            if (cols.column4.card.deadline < cols.column4.card.comdate) {
+                completed = 'Сompleted on time'
+            } else {
+                completed = 'Not completed on time'
+            }
+            return completed
+        }
+    },
 })
 
 
@@ -211,7 +239,7 @@ Vue.component('newcard', {
             </div>
             <div>
                 <label for="indeadline">Deadline</label>
-                <input required type="date" id="indeadline" v-model="deadline">
+                <input required type="text" required placeholder="дд.мм.гггг" id="indeadline" v-model="deadline">
             </div>
             <button type="submit">Add a task</button>
         </form>
@@ -234,6 +262,7 @@ Vue.component('newcard', {
                 deadline: this.deadline,
                 reason: null,
                 edit: null,
+                comdate: null,
             }
             eventBus.$emit('addColumn1', card)
             this.title = null
