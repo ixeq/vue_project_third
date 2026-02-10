@@ -227,3 +227,12 @@ input[type="submit"]:hover {
     border-left-color: lightgreen;
     background-color: #f0fff0;
 }
+
+/* Стили для перетаскивания */
+.cards[draggable="true"] {
+    cursor: grab;
+}
+
+.cards[draggable="true"]:active {
+    cursor: grabbing;
+}

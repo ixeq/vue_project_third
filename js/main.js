@@ -5,10 +5,26 @@ Vue.component('cols', {
     <div id="cols">
         <newcard></newcard>
         <div class="cols__content">
-            <col1 :column1="column1"></col1>
-            <col2 :column2="column2"></col2>
-            <col3 :column3="column3"></col3>
-            <col4 :column4="column4"></col4>
+            <col1 
+                :column1="column1" 
+                @drop-card="handleDrop"
+                column-id="column1"
+            ></col1>
+            <col2 
+                :column2="column2" 
+                @drop-card="handleDrop"
+                column-id="column2"
+            ></col2>
+            <col3 
+                :column3="column3" 
+                @drop-card="handleDrop"
+                column-id="column3"
+            ></col3>
+            <col4 
+                :column4="column4" 
+                @drop-card="handleDrop"
+                column-id="column4"
+            ></col4>
         </div>
     </div>
 `,
@@ -18,10 +34,30 @@ Vue.component('cols', {
             column2: [],
             column3: [],
             column4: [],
+            draggedCard: null,
+            draggedFromColumn: null
         }
     },
     methods: {
+        handleDrop(data) {
+            const { card, fromColumn, toColumn } = data
 
+            // Удаляем карточку из исходной колонки
+            this[fromColumn] = this[fromColumn].filter(c => c !== card)
+
+            // Добавляем в целевую колонку
+            this[toColumn].push(card)
+
+            // Обновляем статус для колонки 4 (Completed)
+            if (toColumn === 'column4') {
+                this.checkDeadline(card)
+            }
+        },
+        checkDeadline(card) {
+            if (card.date > card.deadline) {
+                card.current = false
+            }
+        }
     },
     mounted() {
         eventBus.$on('addColumn1', card => {
@@ -39,19 +75,74 @@ Vue.component('cols', {
                 card.current = false
             }
         })
-    },
-    computed: {
-
     }
 })
 
+// Миксин для функционала перетаскивания
+const draggableMixin = {
+    methods: {
+        dragStart(card, columnId) {
+            eventBus.$emit('drag-start', { card, columnId })
+            event.dataTransfer.effectAllowed = 'move'
+            event.dataTransfer.setData('text/plain', JSON.stringify(card))
+            // Добавляем класс для визуальной обратной связи
+            event.target.classList.add('dragging')
+        },
+        allowDrop(event) {
+            event.preventDefault()
+            event.target.closest('.col').classList.add('drag-over')
+        },
+        drop(event, toColumn) {
+            event.preventDefault()
+            // Убираем классы визуальной обратной связи
+            document.querySelectorAll('.col.drag-over').forEach(el => {
+                el.classList.remove('drag-over')
+            })
+            document.querySelectorAll('.cards.dragging').forEach(el => {
+                el.classList.remove('dragging')
+            })
+
+            const data = event.dataTransfer.getData('text/plain')
+            if (data) {
+                const card = JSON.parse(data)
+                eventBus.$emit('drop-card', {
+                    card: card,
+                    fromColumn: eventBus.$data.draggedFromColumn,
+                    toColumn: toColumn
+                })
+            }
+        },
+        dragEnd() {
+            // Убираем классы визуальной обратной связи
+            document.querySelectorAll('.col.drag-over').forEach(el => {
+                el.classList.remove('drag-over')
+            })
+            document.querySelectorAll('.cards.dragging').forEach(el => {
+                el.classList.remove('dragging')
+            })
+        }
+    }
+}
+
 Vue.component('col1', {
+    mixins: [draggableMixin],
     template: `
-        <div class="col">
+        <div 
+            class="col" 
+            @dragover.prevent="allowDrop"
+            @drop="drop($event, 'column1')"
+        >
             <h2>Planned tasks</h2>
-            <li class="cards" style="background-color: #e79ba2" v-for="card in column1">
-            <a @click="deleteCard(card)">Delete</a> <a @click="card.editB = true">Edit</a>
-            <p class="card-title">{{card.title}}</p>
+            <li 
+                class="cards" 
+                style="background-color: #e79ba2" 
+                v-for="card in column1"
+                draggable="true"
+                @dragstart="dragStart(card, 'column1')" 
+                @dragend="dragEnd"
+            >
+                <a @click="deleteCard(card)">Delete</a> <a @click="card.editB = true">Edit</a>
+                <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
                     <li class="tasks">Date of creation: {{card.date}}</li>
@@ -93,7 +184,7 @@ Vue.component('col1', {
         nextcol(card) {
             this.column1.splice(this.column1.indexOf(card), 1)
             eventBus.$emit('addColumn2', card)
-            },
+        },
         deleteCard(card) {
             this.column1.splice(this.column1.indexOf(card),1)
         },
@@ -107,16 +198,27 @@ Vue.component('col1', {
 })
 
 Vue.component('col2', {
+    mixins: [draggableMixin],
     template: `
-        <div class="col">
+        <div 
+            class="col" 
+            @dragover.prevent="allowDrop"
+            @drop="drop($event, 'column2')"
+        >
             <h2>Tasks in progress</h2>
-            <li class="cards" style="background-color: lightblue" v-for="card in column2">
+            <li 
+                class="cards" 
+                style="background-color: lightblue" 
+                v-for="card in column2"
+                draggable="true"
+                @dragstart="dragStart(card, 'column2')" 
+                @dragend="dragEnd""
+            >
                 <a @click="card.editB = true">Edit</a> <br>
                 <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
-                    <li class="tasks">Date of creation:
-                    {{ card.date }}</li>
+                    <li class="tasks">Date of creation: {{ card.date }}</li>
                     <li class="tasks">Deadline: {{card.deadline}}</li>
                     <li class="tasks" v-if="card.reason != null">Reason of transfer: {{ card.reason }}</li>
                     <li class="tasks" v-if="card.edit != null">Last change: {{ card.edit}}</li>
@@ -161,16 +263,27 @@ Vue.component('col2', {
 })
 
 Vue.component('col3', {
+    mixins: [draggableMixin],
     template: `
-        <div class="col">
+        <div 
+            class="col" 
+            @dragover.prevent="allowDrop"
+            @drop="drop($event, 'column3')"
+        >
             <h2>Testing</h2>
-            <li class="cards" style="background-color: #f5f287" v-for="card in column3">
-                    <a @click="card.editB = true">Edit</a> <br>
+            <li 
+                class="cards" 
+                style="background-color: #f5f287" 
+                v-for="card in column3"
+                draggable="true"
+                @dragstart="dragStart(card, 'column3')" 
+                @dragend="dragEnd"
+            >
+                <a @click="card.editB = true">Edit</a> <br>
                 <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
-                    <li class="tasks">Date of creation:
-                    {{ card.date }}</li>
+                    <li class="tasks">Date of creation: {{ card.date }}</li>
                     <li class="tasks">Deadline: {{card.deadline}}</li>
                     <li class="tasks" v-if="card.reason != null">Reason of transfer: {{ card.reason }}</li>
                     <li class="tasks" v-if="card.edit != null">Last change: {{ card.edit}}</li>
@@ -230,20 +343,31 @@ Vue.component('col3', {
 })
 
 Vue.component('col4', {
+    mixins: [draggableMixin],
     template: `
-        <div class="col">
+        <div 
+            class="col" 
+            @dragover.prevent="allowDrop"
+            @drop="drop($event, 'column4')"
+        >
             <h2>Completed tasks</h2>
-                <div class="cards" style="background-color: lightgreen" v-for="card in column4">
+            <div 
+                class="cards" 
+                style="background-color: lightgreen" 
+                v-for="card in column4"
+                draggable="true"
+                @dragstart="dragStart(card, 'column4')" 
+                @dragend="dragEnd"
+            >
                 <p class="card-title">{{card.title}}</p>
                 <ul>
                     <li class="tasks">Description: {{card.description}}</li>
-                    <li class="tasks">Date of creation:
-                    {{ card.date }}</li>
+                    <li class="tasks">Date of creation: {{ card.date }}</li>
                     <li class="tasks">Deadline: {{card.deadline}}</li>
                     <li class="tasks" v-if="card.current"> Сompleted on time</li>
                     <li class="tasks" v-else>Not completed on time</li>
                 </ul>
-                </div>
+            </div>
         </div>
     `,
     props: {
@@ -254,19 +378,12 @@ Vue.component('col4', {
             type: Object
         }
     },
-    methods: {
 
-    },
-    computed:  {
-
-    },
 })
-
 
 Vue.component('newcard', {
     template: `
     <section>
-    
     <a href="#openModal" class="btn btnModal">Create card</a>
     <div id="openModal" class="modal">
     <div class="modal-dialog">
@@ -276,7 +393,6 @@ Vue.component('newcard', {
             <h3 class="modal-title">Fill out the card</h3>
         </div>
         <div class="modal-body">    
-    
         <form class="addform" @submit.prevent="onSubmit">
             <p>
                 <label for="intitle">Title</label>
@@ -288,7 +404,6 @@ Vue.component('newcard', {
             <input required type="date" required placeholder="дд.мм.гггг" id="indeadline" v-model="deadline">
             <button type="submit">Add a card</button>
         </form>
-        
         </div>
         </div>
     </div>
@@ -322,11 +437,22 @@ Vue.component('newcard', {
             this.deadline = null
             this.date = null
             this.description = null
-            console.log(card)
         }
     }
 })
 
+// Глобальная обработка событий перетаскивания
+eventBus.$on('drag-start', (data) => {
+    eventBus.$data.draggedCard = data.card
+    eventBus.$data.draggedFromColumn = data.columnId
+})
+
+eventBus.$on('drop-card', (data) => {
+    const parent = eventBus.$root.$children[0].$refs.cols
+    if (parent) {
+        parent.handleDrop(data)
+    }
+})
 
 let app = new Vue({
     el: '#app',
