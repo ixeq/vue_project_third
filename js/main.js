@@ -35,9 +35,9 @@ Vue.component('cols', {
         })
         eventBus.$on('addColumn4', card => {
             this.column4.push(card)
-            card.comdate = new Date().toLocaleDateString()
-            console.log(card.comdate)
-            console.log(card.deadline)
+            if (card.date > card.deadline) {
+                card.current = false
+            }
         })
     },
     computed: {
@@ -243,8 +243,8 @@ Vue.component('col4', {
                     <li class="tasks">Date of creation:
                     {{ card.date }}</li>
                     <li class="tasks">Deadline: {{card.deadline}}</li>
-                    <li class="tasks" v-if="card.deadline >= card.comdate">Сompleted on time</li>
-                    <li class="tasks" v-if="card.deadline < card.comdate">Not completed on time</li>
+                    <li class="tasks" v-if="card.current"> Сompleted on time</li>
+                    <li class="tasks" v-else>Not completed on time</li>
                 </ul>
                 </div>
         </div>
@@ -311,13 +311,14 @@ Vue.component('newcard', {
             let card = {
                 title: this.title,
                 description: this.description,
-                date: new Date().toLocaleDateString(),
-                deadline: this.deadline.split('-').reverse().join('-'),
+                date: new Date().toLocaleDateString().split("-").reverse().join("-"),
+                deadline: this.deadline,
                 reason: null,
                 transfer: false,
                 edit: null,
                 editB: false,
                 comdate: null,
+                current: true,
             }
             eventBus.$emit('addColumn1', card)
             this.title = null
